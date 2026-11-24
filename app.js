@@ -179,7 +179,7 @@
     }
 
     // ドット絵進捗
-    drawPixelArt($('reward-canvas'), state.stage.art, state.solvedCount / state.totalInitial);
+    drawPixelArt($('reward-canvas'), state.stage.artId, state.solvedCount / state.totalInitial);
 
     // 出題表示切替
     ['mode-choice', 'mode-tiles', 'mode-typing'].forEach(id => $(id).classList.add('hidden'));
@@ -387,7 +387,7 @@
       banner.classList.add('ok');
       banner.textContent = `せいかい！ ${w.en} = ${w.ja} ${lvUpMsg}`;
 
-      drawPixelArt($('reward-canvas'), state.stage.art, state.solvedCount / state.totalInitial);
+      drawPixelArt($('reward-canvas'), state.stage.artId, state.solvedCount / state.totalInitial);
 
       setTimeout(nextQuestion, 900);
     } else {
@@ -415,7 +415,7 @@
     window.Sound.playClear();
     showScreen('result');
 
-    drawPixelArt($('result-canvas'), state.stage.art, 1);
+    drawPixelArt($('result-canvas'), state.stage.artId, 1);
 
     const allMax = state.stage.words.every(w => getMastery(w.id) >= 5);
     $('result-title').textContent = allMax ? 'ステージ完全マスター！' : 'ステージクリア！';
@@ -437,28 +437,28 @@
     });
   }
 
-  /* ================= ドット絵描画 ================= */
-  function drawPixelArt(canvas, artRows, ratio) {
-    const ctx = canvas.getContext('2d');
-    const size = canvas.width;
-    const rows = artRows.length;
-    const cols = artRows[0].length;
-    const cell = size / cols;
+  /* ================= ドット絵描画（Antflow オリジナル解像度） ================= */
+  function drawPixelArt(canvas, artId, ratio) {
+    if (typeof getArt !== 'function') return;
+    const art = getArt(artId);
+    if (canvas.width !== art.W) canvas.width = art.W;
+    if (canvas.height !== art.H) canvas.height = art.H;
 
-    ctx.clearRect(0, 0, size, size);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, art.W, art.H);
 
     const pixels = [];
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) {
-        const ch = artRows[y][x];
-        if (ch !== '.') pixels.push({ x, y, color: window.KF_PALETTE[ch] || '#94a3b8' });
+    for (let y = 0; y < art.H; y++) {
+      for (let x = 0; x < art.W; x++) {
+        const c = art.grid[y * art.W + x];
+        if (c >= 0) pixels.push({ x, y, color: HEX[c] || '#94a3b8' });
       }
     }
 
     const revealCount = Math.round(pixels.length * Math.max(0, Math.min(1, ratio)));
     pixels.forEach((p, idx) => {
       ctx.fillStyle = idx < revealCount ? p.color : '#e2e8f0';
-      ctx.fillRect(p.x * cell, p.y * cell, Math.ceil(cell), Math.ceil(cell));
+      ctx.fillRect(p.x, p.y, 1, 1);
     });
   }
 

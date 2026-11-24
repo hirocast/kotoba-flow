@@ -1,36 +1,12 @@
 // File: words.js
 'use strict';
 
-window.KF_PALETTE = {
-  '.': null,
-  'R': '#ef4444',
-  'O': '#f97316',
-  'Y': '#facc15',
-  'G': '#22c55e',
-  'D': '#15803d',
-  'B': '#3b82f6',
-  'L': '#93c5fd',
-  'N': '#78350f',
-  'W': '#ffffff',
-  'K': '#1e293b',
-  'P': '#f472b6'
-};
-
 window.KF_STAGES = [
   {
     id: 'daily',
     title: 'Stage 1：身近なもの',
     desc: 'apple / book / water など基本の6語',
-    art: [
-      '....GG..',
-      '...G.G..',
-      '..RRRR..',
-      '.RRRRRR.',
-      '.RWRRRR.',
-      '.RRRRRR.',
-      '..RRRR..',
-      '...RR...'
-    ],
+    artId: 32, // りんご
     words: [
       { id: 'apple', en: 'apple', ja: 'りんご' },
       { id: 'book', en: 'book', ja: '本' },
@@ -44,16 +20,7 @@ window.KF_STAGES = [
     id: 'actions',
     title: 'Stage 2：まいにちの動詞',
     desc: 'walk / speak / think などよく使う6語',
-    art: [
-      '...YY...',
-      '..YYYY..',
-      '.YKYYKY.',
-      '.YYYYYY.',
-      '.YPOOPY.',
-      '..YYYY..',
-      '..Y..Y..',
-      '.YY..YY.'
-    ],
+    artId: 26, // ひよこ
     words: [
       { id: 'walk', en: 'walk', ja: '歩く' },
       { id: 'speak', en: 'speak', ja: '話す' },
@@ -67,16 +34,7 @@ window.KF_STAGES = [
     id: 'nature',
     title: 'Stage 3：自然・きせつ',
     desc: 'cloud / river / forest など自然の6語',
-    art: [
-      '..LL....',
-      '.LLLL...',
-      '...GG...',
-      '..GGGG..',
-      '.GGGGGG.',
-      '...NN...',
-      '...NN...',
-      '.BBBBBB.'
-    ],
+    artId: 25, // さくら
     words: [
       { id: 'cloud', en: 'cloud', ja: 'くも' },
       { id: 'river', en: 'river', ja: '川' },
@@ -90,16 +48,7 @@ window.KF_STAGES = [
     id: 'feeling',
     title: 'Stage 4：きもち・ようす',
     desc: 'happy / gentle / brave など形容詞の6語',
-    art: [
-      '.PP..PP.',
-      'PPPPPPPP',
-      'PPWPPPPP',
-      'PPPPPPPP',
-      '.PPPPPP.',
-      '..PPPP..',
-      '...PP...',
-      '........'
-    ],
+    artId: 24, // うさぎ
     words: [
       { id: 'happy', en: 'happy', ja: 'うれしい・幸せな' },
       { id: 'gentle', en: 'gentle', ja: 'やさしい' },
@@ -113,16 +62,7 @@ window.KF_STAGES = [
     id: 'story',
     title: 'Stage 5：ストーリーの名詞',
     desc: 'journey / memory / promise など6語',
-    art: [
-      '...YY...',
-      '...YY...',
-      '.YYYYYY.',
-      '..YYYY..',
-      '..YYYY..',
-      '.YY..YY.',
-      'YY....YY',
-      '........'
-    ],
+    artId: 10, // ロケット
     words: [
       { id: 'journey', en: 'journey', ja: '旅' },
       { id: 'memory', en: 'memory', ja: '思い出・記憶' },
