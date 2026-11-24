@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>コトバフロー - Kotoba Flow</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <div id="app">
+    <!-- ヘッダー -->
+    <header class="topbar">
+      <button id="btn-back" class="icon-btn hidden" aria-label="もどる">←</button>
+      <div class="brand" id="topbar-title">Kotoba Flow</div>
+      <div class="topbar-actions">
+        <button id="btn-sound" class="icon-btn" aria-label="サウンド切替" title="サウンドON/OFF">🔊</button>
+      </div>
+    </header>
+
+    <!-- ホーム／ステージ選択画面 -->
+    <main id="screen-home" class="screen">
+      <section class="hero-card">
+        <div class="hero-badge">英→日 4択 から 日→英 タイピングへ</div>
+        <h1>コトバフロー</h1>
+        <p class="hero-sub">最初は選ぶだけ。くり返すうちに、自然とスペルが打てるようになる英単語ゲーム。</p>
+        <div class="stats-row">
+          <div class="stat-pill">
+            <span class="stat-label">マスター単語</span>
+            <strong id="stat-mastered">0 / 30</strong>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">ベストコンボ</span>
+            <strong id="stat-best-combo">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-head">
+        <h2>ステージをえらぶ</h2>
+        <button id="btn-reset-progress" class="text-btn">記録リセット</button>
+      </section>
+
+      <div id="stage-list" class="stage-list"></div>
+    </main>
+
+    <!-- プレイ画面 -->
+    <main id="screen-play" class="screen hidden">
+      <div class="play-hud">
+        <div class="hud-left">
+          <span id="play-stage-name" class="stage-chip">Stage 1</span>
+          <span id="play-level-badge" class="level-chip">Lv.1 英→日</span>
+        </div>
+        <div class="hud-right">
+          <span id="play-combo" class="combo-chip">0 COMBO</span>
+          <span id="play-progress-text" class="progress-text">1 / 6</span>
+        </div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div id="play-progress-bar" class="progress-bar-fill"></div>
+      </div>
+
+      <!-- ドット絵ご褒美ミニプレビュー + 問題カード -->
+      <section class="question-card">
+        <div class="question-top-row">
+          <div class="pixel-reward-mini" title="正解するごとに絵が完成します">
+            <canvas id="reward-canvas" width="48" height="48"></canvas>
+          </div>
+          <div class="word-mastery-dots" id="word-mastery-dots" title="この単語の習熟度 (Lv.1〜5)"></div>
+          <button id="btn-speak" class="speak-btn" aria-label="発音を聞く" title="発音を聞く">🔈 発音</button>
+        </div>
+
+        <div id="question-prompt" class="question-prompt">apple</div>
+        <div id="question-sub" class="question-sub">意味をえらぼう</div>
+      </section>
+
+      <!-- フィードバック帯 -->
+      <div id="feedback-banner" class="feedback-banner hidden"></div>
+
+      <!-- 回答エリア：4択（Lv.1 / Lv.2） -->
+      <section id="mode-choice" class="answer-area hidden">
+        <div id="choice-grid" class="choice-grid"></div>
+      </section>
+
+      <!-- 回答エリア：文字タイル並べ替え（Lv.3） -->
+      <section id="mode-tiles" class="answer-area hidden">
+        <div id="tile-slots" class="tile-slots"></div>
+        <div id="tile-pool" class="tile-pool"></div>
+        <div class="tile-controls">
+          <button id="btn-tile-clear" class="secondary-btn">やり直す</button>
+        </div>
+      </section>
+
+      <!-- 回答エリア：タイピング（Lv.4 / Lv.5） -->
+      <section id="mode-typing" class="answer-area hidden">
+        <div id="typing-display" class="typing-display"></div>
+        <div class="typing-hint-row">
+          <span id="typing-hint-text" class="typing-hint-text"></span>
+          <button id="btn-typing-hint" class="text-btn">1文字ヒント</button>
+        </div>
+        <div id="qwerty-pad" class="qwerty-pad"></div>
+      </section>
+    </main>
+
+    <!-- ステージクリア画面 -->
+    <main id="screen-result" class="screen hidden">
+      <section class="result-card">
+        <div class="result-badge">STAGE CLEAR!</div>
+        <h2 id="result-title">よくできました！</h2>
+        <div class="result-art-wrap">
+          <canvas id="result-canvas" width="144" height="144"></canvas>
+        </div>
+        <p id="result-summary" class="result-summary"></p>
+        <div id="result-word-list" class="result-word-list"></div>
+        <div class="result-actions">
+          <button id="btn-play-again" class="primary-btn">もういちど挑戦（次のレベルへ）</button>
+          <button id="btn-to-home" class="secondary-btn">ステージ一覧へ</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="words.js?v=1"></script>
+  <script src="sound.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
