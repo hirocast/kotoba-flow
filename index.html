@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>コトバフロー - Kotoba Flow</title>
-  <link rel="stylesheet" href="style.css?v=1" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="コトバフロー" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <div id="app">
@@ -14,6 +20,7 @@
       <div class="brand" id="topbar-title">Kotoba Flow</div>
       <div class="topbar-actions">
         <button id="btn-sound" class="icon-btn" aria-label="サウンド切替" title="サウンドON/OFF">🔊</button>
+        <button id="btn-settings" class="icon-btn" aria-label="設定" title="設定">⚙️</button>
       </div>
     </header>
 
@@ -34,6 +41,12 @@
           </div>
         </div>
       </section>
+
+      <!-- 更新お知らせボックス -->
+      <div id="home-update-box" class="update-box"></div>
+
+      <!-- ウェブアプリ化クイックボタン（未アプリ化時のみ表示） -->
+      <button id="btn-home-a2hs" class="a2hs-banner-btn hidden">📲 ホーム画面に追加してウェブアプリ化</button>
 
       <section class="section-head">
         <h2>ステージをえらぶ</h2>
@@ -118,13 +131,60 @@
         </div>
       </section>
     </main>
+    <!-- 設定モーダル -->
+    <div id="ov-settings" class="ov hidden" role="dialog" aria-modal="true" aria-label="設定">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>⚙️ 設定</h2>
+          <button id="btn-set-close" class="icon-btn" aria-label="とじる">✕</button>
+        </div>
+
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">効果音・発音</div>
+            <div class="setting-sub">タップ音や正解音、英語の読み上げ</div>
+          </div>
+          <button id="btn-set-sound" class="switch-btn on">ON</button>
+        </div>
+
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">自動読み上げ</div>
+            <div class="setting-sub">問題や正解時に自動で英語を発音</div>
+          </div>
+          <button id="btn-set-autospeak" class="switch-btn on">ON</button>
+        </div>
+
+        <button id="btn-set-a2hs" class="primary-btn">📲 ウェブアプリ化する（ホーム画面に追加）</button>
+        <button id="btn-set-check-upd" class="secondary-btn">🔄 更新を確認する</button>
+        <button id="btn-set-reset" class="secondary-btn" style="color:#b91c1c;border-color:#fecaca;background:#fef2f2">🗑️ 学習記録をリセット</button>
+
+        <div id="set-ver-foot" class="ver-foot"></div>
+      </div>
+    </div>
+
+    <!-- ウェブアプリ化モーダル -->
+    <div id="ov-a2hs" class="ov hidden" role="dialog" aria-modal="true" aria-label="ウェブアプリ化">
+      <div class="modal-card" style="text-align:center">
+        <img src="apple-touch-icon.png" alt="コトバフロー" style="width:68px;height:68px;border-radius:16px;margin:0 auto;display:block;box-shadow:0 4px 12px rgba(59,130,246,0.22)" />
+        <h2 style="margin:4px 0 0;font-size:18px">📲 ウェブアプリとして保存</h2>
+        <p style="margin:0;font-size:12px;color:#64748b;line-height:1.55">
+          ホーム画面に追加すると、ブラウザの枠が消えて<strong>広い全画面アプリ</strong>として遊べます。<br />
+          <span style="color:#d97706">※ 現在のブラウザの学習記録はアプリ版へ引き継がれないため、早めの追加がおすすめです。</span>
+        </p>
+        <div id="a2hs-guide" class="a2hs-guide" style="text-align:left"></div>
+        <button id="btn-a2hs-install" class="primary-btn hidden">📲 ワンタップでアプリ化</button>
+        <button id="btn-a2hs-copy" class="secondary-btn hidden">📋 URLをコピーする</button>
+        <button id="btn-a2hs-close" class="secondary-btn">とじる</button>
+      </div>
+    </div>
   </div>
 
-  <script src="art_compat.js?v=2"></script>
-  <script src="arts.js?v=2"></script>
-  <script src="words.js?v=2"></script>
-  <script src="raster.js?v=2"></script>
-  <script src="sound.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="art_compat.js?v=3"></script>
+  <script src="arts.js?v=3"></script>
+  <script src="words.js?v=3"></script>
+  <script src="raster.js?v=3"></script>
+  <script src="sound.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

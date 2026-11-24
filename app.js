@@ -51,11 +51,12 @@
         return {
           mastery: parsed.mastery && typeof parsed.mastery === 'object' ? parsed.mastery : {},
           bestCombo: Number(parsed.bestCombo) || 0,
-          sound: parsed.sound !== false
+          sound: parsed.sound !== false,
+          autoSpeak: parsed.autoSpeak !== false
         };
       }
     } catch (e) {}
-    return { mastery: {}, bestCombo: 0, sound: true };
+    return { mastery: {}, bestCombo: 0, sound: true, autoSpeak: true };
   }
 
   function persistSave() {
@@ -90,6 +91,20 @@
   function updateSoundBtn() {
     window.Sound.enabled = save.sound;
     $('btn-sound').textContent = save.sound ? '🔊' : '🔇';
+    const sBtn = $('btn-set-sound');
+    if (sBtn) {
+      sBtn.textContent = save.sound ? 'ON' : 'OFF';
+      sBtn.classList.toggle('on', save.sound);
+    }
+    const aBtn = $('btn-set-autospeak');
+    if (aBtn) {
+      aBtn.textContent = save.autoSpeak ? 'ON' : 'OFF';
+      aBtn.classList.toggle('on', save.autoSpeak);
+    }
+  }
+
+  function autoSpeakWord(text) {
+    if (save.autoSpeak) window.Sound.speakWord(text);
   }
 
   /* ================= ホーム画面 ================= */
@@ -377,7 +392,7 @@
       persistSave();
 
       window.Sound.playOk(state.combo - 1);
-      if (curLv >= 2) window.Sound.speakWord(w.en);
+      if (curLv >= 2) autoSpeakWord(w.en);
 
       state.queue.shift();
       state.solvedCount++;
@@ -397,7 +412,7 @@
       persistSave();
 
       window.Sound.playNg();
-      window.Sound.speakWord(w.en);
+      autoSpeakWord(w.en);
 
       // 間違えた単語はキューの後ろに戻して再挑戦
       state.queue.shift();
@@ -535,8 +550,311 @@
     }
   });
 
+  /* ================= 設定・ウェブアプリ化・更新お知らせ ================= */
+  const SEEN_VER_KEY = 'kotoba-flow-seen-ver-v1';
+  const appUpd = {
+    checked: false,
+    hasUpdate: false,
+    justUpdated: false,
+    openHist: false,
+    lastCheck: 0,
+    data: null
+  };
+
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function renderUpdateBox() {
+    const box = $('home-update-box');
+    if (!box) return;
+    const curVer = window.KF_APP_VER || '';
+    const d = appUpd.data;
+
+    if (appUpd.hasUpdate && d) {
+      const notes = (d.notes || []).map(n => `<li>${escHtml(n)}</li>`).join('');
+      box.innerHTML = `
+        <div class="upd-card has-update">
+          <div class="upd-head">
+            <div><span class="upd-badge">NEW!</span>新しいバージョン（${escHtml(d.version)}）があります</div>
+          </div>
+          ${d.headline ? `<div style="margin-top:4px;font-weight:700">${escHtml(d.headline)}</div>` : ''}
+          ${notes ? `<ul class="upd-notes">${notes}</ul>` : ''}
+          <div class="upd-actions">
+            <button type="button" class="upd-btn" data-upd="apply">✨ いま更新する</button>
+            <button type="button" class="upd-btn sec" data-upd="hist">${appUpd.openHist ? '履歴をとじる' : '📜 更新履歴'}</button>
+          </div>
+          ${appUpd.openHist ? renderUpdHistHtml(d) : ''}
+        </div>`;
+      return;
+    }
+
+    if (appUpd.justUpdated) {
+      box.innerHTML = `
+        <div class="upd-card just-updated">
+          <div class="upd-head">
+            <div>🎉 最新版（${escHtml(curVer)}）に更新しました！</div>
+            <button type="button" class="upd-btn sec" data-upd="ok">OK</button>
+          </div>
+          ${d && d.headline ? `<div style="margin-top:4px;font-size:12px">${escHtml(d.headline)}</div>` : ''}
+        </div>`;
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="upd-card">
+        <div class="upd-head">
+          <span style="font-size:12px;color:#64748b">バージョン: <strong>${escHtml(curVer || 'dev')}</strong></span>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="upd-btn sec" style="padding:5px 9px;font-size:11px" data-upd="hist">${appUpd.openHist ? '履歴をとじる' : '📜 更新履歴'}</button>
+            <button type="button" class="upd-btn sec" style="padding:5px 9px;font-size:11px" data-upd="recheck">🔄 更新確認</button>
+          </div>
+        </div>
+        ${appUpd.openHist && d ? renderUpdHistHtml(d) : ''}
+      </div>`;
+  }
+
+  function renderUpdHistHtml(d) {
+    const hist = Array.isArray(d.history) ? d.history : [];
+    if (!hist.length) return '';
+    return `<div class="upd-hist-list">${hist.slice(0, 6).map(h => `
+      <div class="upd-hist-item">
+        <div><strong>${escHtml(h.version)}</strong>（${escHtml(h.date || '')}）${h.headline ? ' - ' + escHtml(h.headline) : ''}</div>
+        ${Array.isArray(h.notes) ? '<div>' + h.notes.map(x => '・' + escHtml(x)).join('<br>') + '</div>' : ''}
+      </div>
+    `).join('')}</div>`;
+  }
+
+  async function applyAppUpdate() {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.update()));
+      }
+    } catch (e) {}
+    const url = new URL(location.href);
+    url.searchParams.set('upd', String(Date.now()));
+    location.replace(url.toString());
+  }
+
+  async function checkAppUpdate(force) {
+    const now = Date.now();
+    if (!force && now - appUpd.lastCheck < 60000) return appUpd.hasUpdate;
+    appUpd.lastCheck = now;
+    try {
+      const res = await fetch('version.json?_=' + now, { cache: 'no-store' });
+      if (!res.ok) {
+        renderUpdateBox();
+        return false;
+      }
+      const data = await res.json();
+      if (!data || !data.version) return false;
+      appUpd.data = data;
+      appUpd.checked = true;
+      const curVer = window.KF_APP_VER || '';
+      appUpd.hasUpdate = !curVer || data.version !== curVer;
+      if (!appUpd.hasUpdate && curVer) {
+        let seen = '';
+        try { seen = localStorage.getItem(SEEN_VER_KEY) || ''; } catch (e) {}
+        if (seen && seen !== curVer) appUpd.justUpdated = true;
+        else if (!seen) { try { localStorage.setItem(SEEN_VER_KEY, curVer); } catch (e) {} }
+      }
+      renderUpdateBox();
+      return appUpd.hasUpdate;
+    } catch (e) {
+      renderUpdateBox();
+      return false;
+    }
+  }
+
+  $('home-update-box').addEventListener('click', e => {
+    const btn = e.target.closest('[data-upd]');
+    if (!btn) return;
+    window.Sound.playTap();
+    const act = btn.getAttribute('data-upd');
+    if (act === 'apply') {
+      applyAppUpdate();
+    } else if (act === 'hist') {
+      appUpd.openHist = !appUpd.openHist;
+      renderUpdateBox();
+    } else if (act === 'ok') {
+      appUpd.justUpdated = false;
+      try { if (window.KF_APP_VER) localStorage.setItem(SEEN_VER_KEY, window.KF_APP_VER); } catch (er) {}
+      renderUpdateBox();
+    } else if (act === 'recheck') {
+      checkAppUpdate(true).then(has => {
+        if (!has) alert('いまお使いのバージョンが最新です！');
+      });
+    }
+  });
+
+  // PWA ウェブアプリ化（A2HS）
+  let deferredPrompt = null;
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+  const isInApp = /Line\/|FBAN|FBAV|Instagram|Twitter|YJApp/i.test(ua);
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function refreshA2hsHomeBtn() {
+    const btn = $('btn-home-a2hs');
+    if (btn) btn.classList.toggle('hidden', isStandalone());
+  }
+
+  function openA2hsModal() {
+    const guide = $('a2hs-guide');
+    const inst = $('btn-a2hs-install');
+    const cp = $('btn-a2hs-copy');
+
+    inst.classList.toggle('hidden', !deferredPrompt);
+    cp.classList.toggle('hidden', !isInApp);
+
+    if (isStandalone()) {
+      guide.innerHTML = 'すでに<strong>ウェブアプリ版</strong>として起動しています！';
+    } else if (isInApp) {
+      guide.innerHTML = (isIOS
+        ? '<div><strong style="color:#d97706">いまアプリ内ブラウザで開いています</strong></div>' +
+          '<div>① 画面下の <strong>「⋯」「⋮」</strong>（または共有）＞ <strong>「Safariで開く」</strong></div>' +
+          '<div>② Safariで開いたら、下の <strong>「□↑（共有）」</strong>＞ <strong>「ホーム画面に追加」</strong></div>'
+        : '<div><strong style="color:#d97706">いまアプリ内ブラウザで開いています</strong></div>' +
+          '<div>① 右上・右下の <strong>「⋮」「⋯」</strong> ＞ <strong>「他のアプリで開く（Chrome）」</strong></div>' +
+          '<div>② Chromeで開いたら、右上の <strong>「⋮」</strong> ＞ <strong>「ホーム画面に追加」</strong></div>');
+    } else if (isIOS) {
+      guide.innerHTML =
+        '<div>① 画面下の共有ボタン <strong>「□↑」</strong> をタップ</div>' +
+        '<div>② 下にスクロールして <strong>「ホーム画面に追加」</strong> をタップ</div>' +
+        '<div>③ 右上の <strong>「追加」</strong> を押すとホーム画面にアイコンができます！</div>';
+    } else if (isAndroid) {
+      guide.innerHTML = deferredPrompt
+        ? '<div>下の <strong>「📲 ワンタップでアプリ化」</strong> を押すだけでホーム画面に追加できます！</div>'
+        : '<div>① ブラウザ右上の <strong>「⋮」</strong> メニューをタップ</div>' +
+          '<div>② <strong>「ホーム画面に追加」</strong>（または「アプリをインストール」）をタップ</div>';
+    } else {
+      guide.innerHTML = deferredPrompt
+        ? '<div>下の <strong>「📲 ワンタップでアプリ化」</strong> からデスクトップアプリとして保存できます。</div>'
+        : '<div>ブラウザのアドレスバー右端の <strong>インストールアイコン</strong>、またはメニューの <strong>「アプリをインストール」</strong> からウェブアプリ化できます。</div>';
+    }
+
+    $('ov-a2hs').classList.remove('hidden');
+  }
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    refreshA2hsHomeBtn();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    refreshA2hsHomeBtn();
+    $('ov-a2hs').classList.add('hidden');
+  });
+
+  $('btn-home-a2hs').addEventListener('click', () => {
+    window.Sound.playTap();
+    openA2hsModal();
+  });
+
+  $('btn-a2hs-install').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    $('ov-a2hs').classList.add('hidden');
+    refreshA2hsHomeBtn();
+  });
+
+  $('btn-a2hs-copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(location.href.split('?')[0]);
+      alert('URLをコピーしました！SafariやChromeに貼り付けて開いてください。');
+    } catch (e) {
+      prompt('このURLをコピーして開いてください：', location.href.split('?')[0]);
+    }
+  });
+
+  $('btn-a2hs-close').addEventListener('click', () => {
+    window.Sound.playTap();
+    $('ov-a2hs').classList.add('hidden');
+  });
+
+  // 設定モーダル
+  function openSettings() {
+    updateSoundBtn();
+    $('set-ver-foot').textContent = 'コトバフロー ' + (window.KF_APP_VER || '');
+    $('ov-settings').classList.remove('hidden');
+  }
+
+  $('btn-settings').addEventListener('click', () => {
+    window.Sound.playTap();
+    openSettings();
+  });
+
+  $('btn-set-close').addEventListener('click', () => {
+    window.Sound.playTap();
+    $('ov-settings').classList.add('hidden');
+  });
+
+  $('ov-settings').addEventListener('click', e => {
+    if (e.target === $('ov-settings')) $('ov-settings').classList.add('hidden');
+  });
+
+  $('ov-a2hs').addEventListener('click', e => {
+    if (e.target === $('ov-a2hs')) $('ov-a2hs').classList.add('hidden');
+  });
+
+  $('btn-set-sound').addEventListener('click', () => {
+    save.sound = !save.sound;
+    persistSave();
+    updateSoundBtn();
+    if (save.sound) window.Sound.playTap();
+  });
+
+  $('btn-set-autospeak').addEventListener('click', () => {
+    save.autoSpeak = !save.autoSpeak;
+    persistSave();
+    updateSoundBtn();
+    window.Sound.playTap();
+  });
+
+  $('btn-set-a2hs').addEventListener('click', () => {
+    window.Sound.playTap();
+    $('ov-settings').classList.add('hidden');
+    openA2hsModal();
+  });
+
+  $('btn-set-check-upd').addEventListener('click', async () => {
+    window.Sound.playTap();
+    const has = await checkAppUpdate(true);
+    $('ov-settings').classList.add('hidden');
+    if (has) {
+      renderHome();
+    } else {
+      alert('いまお使いのバージョン（' + (window.KF_APP_VER || '') + '）が最新です！');
+    }
+  });
+
+  $('btn-set-reset').addEventListener('click', () => {
+    if (!confirm('すべての単語の習熟度を Lv.1 に戻しますか？')) return;
+    save.mastery = {};
+    save.bestCombo = 0;
+    persistSave();
+    $('ov-settings').classList.add('hidden');
+    renderHome();
+  });
+
   // 初期化
   updateSoundBtn();
   buildQwertyPad();
+  refreshA2hsHomeBtn();
+  renderUpdateBox();
   renderHome();
+  checkAppUpdate(false);
 })();

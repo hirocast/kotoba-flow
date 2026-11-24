@@ -1,6 +1,7 @@
 // File: art_compat.js
 'use strict';
 
+window.KF_APP_VER = 'v20261124a';
 window.AF_LOADED = window.AF_LOADED || [];
 const SHADE_MIN = 30;
 const KEYS = ['R','O','Y','L','G','F','C','B','I','P','K','W','S','T','N','A','M','D','V','E','Q'];
